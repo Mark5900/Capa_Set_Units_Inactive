@@ -65,8 +65,7 @@ function Set-UnitInactive {
                 Write-MBLogLine -ScriptPart $ScriptPart -Text "Failed to set unit $($Unit.Name) to inactive" -ForegroundColor Red
                 $Script:ScriptFailed = 1
             }
-
-            if ($UnitFolder -eq "$Script:InactiveFolderStructure\") {
+            if ($UnitFolder -ne "$Script:InactiveFolderStructure\") {
                 [bool]$Status = Add-CapaUnitToFolder -CapaSDK $oCMS -UnitName $Unit.Name -UnitType Computer -FolderStructure $Script:InactiveFolderStructure -CreateFolder true
                 if ($Status -ne $true) {
                     Write-MBLogLine -ScriptPart $ScriptPart -Text "Failed to add unit $($Unit.Name) to folder $Script:InactiveFolderStructure" -ForegroundColor Red
@@ -93,9 +92,13 @@ try {
     If ($null -eq $DefaultManagementPointProd) {
         $oCMSDev = Initialize-CapaSDK -Server $CapaServer -Database $Database
         $oCMSProd = $oCMSDev
+        Set-UnitInactive -oCMS $oCMSDev
     } else {
         $oCMSDev = Initialize-CapaSDK -Server $CapaServer -Database $Database -DefaultManagementPoint $DefaultManagementPointDev
         $oCMSProd = Initialize-CapaSDK -Server $CapaServer -Database $Database -DefaultManagementPoint $DefaultManagementPointProd
+
+        Set-UnitInactive -oCMS $oCMSDev
+        Set-UnitInactive -oCMS $oCMSProd
     }
 } catch {
     $Error[0]
@@ -104,6 +107,7 @@ try {
 
 If ($Script:ScriptFailed -ne 0) {
     $Text = "Script $ScriptName failed, check the log for more information on server $($env:COMPUTERNAME)"
+    Write-MBLogLine -ScriptPart $ScriptName -Text $Text -ForegroundColor Red
     if ($Test -ne $true) {
         #TODO: Send mail with error message
     }
