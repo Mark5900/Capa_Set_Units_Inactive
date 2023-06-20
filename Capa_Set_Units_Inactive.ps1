@@ -27,6 +27,7 @@ $Script:LastRunDate = 90
 
 $Script:InactiveFolderStructure = "Inaktiv i mindst $Script:LastRunDate dage"
 $Script:InactiveActiveFolderStructure = "$Script:InactiveFolderStructure\Aktive igen" # If $null nothing happens else will move the units to the folder structure spiciefied
+$Script:InactiveLastRunTimeFolderStructure = "$Script:InactiveFolderStructure\Bad agent" # If $null nothing happens else will move the units to the folder structure spiciefied
 
 #################
 ### FUNCTIONS ###
@@ -60,11 +61,13 @@ function Set-UnitInactive {
         # Code
         if ($UnitLastExecuted -lt $Date) {
             Write-MBLogLine -ScriptPart $ScriptPart -Text "Unit to set inactive: $($Unit.Name) - LastRunTime: $LastRunTime - UnitLastExecuted: $UnitLastExecuted"
+
             [bool]$Status = Set-CapaUnitStatus -CapaSDK $oCMS -UnitName $Unit.Name -Status Inactive
             if ($Status -ne $true) {
                 Write-MBLogLine -ScriptPart $ScriptPart -Text "Failed to set unit $($Unit.Name) to inactive" -ForegroundColor Red
                 $Script:ScriptFailed = 1
             }
+
             if ($UnitFolder -ne "$Script:InactiveFolderStructure\") {
                 [bool]$Status = Add-CapaUnitToFolder -CapaSDK $oCMS -UnitName $Unit.Name -UnitType Computer -FolderStructure $Script:InactiveFolderStructure -CreateFolder true
                 if ($Status -ne $true) {
@@ -72,7 +75,16 @@ function Set-UnitInactive {
                     $Script:ScriptFailed = 1
                 }
             }
+        } elseif ($null -ne $Script:InactiveLastRunTimeFolderStructure -and $UnitLastExecuted -lt $Date -and $LastRunTime -gt $Date) {
+            Write-MBLogLine -ScriptPart $ScriptPart -Text "The unit $($Unit.Name) has not been executed for $Script:LastRunDate days but the last run time is $LastRunTime"
+
+            if ($Status -ne $true) {
+                Write-MBLogLine -ScriptPart $ScriptPart -Text "Failed to add unit $($Unit.Name) to folder $Script:InactiveActiveFolderStructure" -ForegroundColor Red
+                $Script:ScriptFailed = 1
+            }
         } elseif ($null -ne $Script:InactiveActiveFolderStructure -and $UnitFolder -eq "$Script:InactiveFolderStructure\" -and $Unit.Status -eq 'Active') {
+            Write-MBLogLine -ScriptPart $ScriptPart -Text "The unit $($Unit.Name) has become active again"
+
             [bool]$Status = Add-CapaUnitToFolder -CapaSDK $oCMS -UnitName $Unit.Name -UnitType Computer -FolderStructure $Script:InactiveActiveFolderStructure -CreateFolder true
             if ($Status -ne $true) {
                 Write-MBLogLine -ScriptPart $ScriptPart -Text "Failed to add unit $($Unit.Name) to folder $Script:InactiveActiveFolderStructure" -ForegroundColor Red
