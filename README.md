@@ -21,6 +21,7 @@ At the path `C:\Program Files\PowerShell\Modules` creat a folder named `Capa.Pow
 ### [Capa_Set_Units_Inactive.ps1](Capa_Set_Units_Inactive.ps1)
 
 Create a task in Windows Task Scheduler to run the script every day. The task need to run as an user with proper rights to the CapaInstaller Console.
+#### Important
 
 * NOTE: The script needs to be run as administrator.
 * NOTE: Remember to change parameters in the script to match your environment.
@@ -28,7 +29,11 @@ Create a task in Windows Task Scheduler to run the script every day. The task ne
 
 ### [ServerTask_Capa_Set_Units_Inactive.ps1](ServerTask_Capa_Set_Units_Inactive.ps1)
 
-Create a new PowerPack packaget and copy the script into the install script.
+Create a new PowerPack packaget and copy the script into the install script. In the package kit create a folder for each of the following apps and add the .psd1 & .psm1 files to the folder.
 
-* NOTE: Remember to change parameters in the script to match your environment.
-* NOTE: Look throug the script for #TODO
+ - [Capa.PowerShell.Module.SDK.Authentication](https://github.com/Mark5900/Capa.PowerShell.Module/tree/main/Modules/Capa.PowerShell.Module.SDK.Authentication)
+ - [Capa.PowerShell.Module.SDK.Unit](https://github.com/Mark5900/Capa.PowerShell.Module/tree/main/Modules/Capa.PowerShell.Module.SDK.Unit)
+
+#### Important
+- NOTE: Remember to change parameters in the script to match your environment.
+- NOTE: Look throug the script for #TODO
