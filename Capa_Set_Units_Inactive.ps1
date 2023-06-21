@@ -41,13 +41,14 @@ function Set-UnitInactive {
 
     $AllUnits = Get-CapaUnits -CapaSDK $oCMS -Type Computer
     foreach ($Unit in $AllUnits) {
-        # Units to skip
+        #region Units to skip
         if ($Unit.IsMobileDevice -eq $true) {
             # Skip mobile devices
             continue
         }
+        #endregion
 
-        # Variables
+        #region Variables
         $LastRunTime = (Get-CapaUnitLastRuntime -CapaSDK $oCMS -UnitName $Unit.Name -UnitType Computer).Split(' ')
         $LastRunTime = $LastRunTime[0].Split('-')
         $LastRunTime = Get-Date -Day $LastRunTime[0] -Month $LastRunTime[1] -Year $LastRunTime[2]
@@ -57,9 +58,17 @@ function Set-UnitInactive {
         $UnitLastExecuted = Get-Date -Day $UnitLastExecuted[0] -Month $UnitLastExecuted[1] -Year $UnitLastExecuted[2]
 
         $UnitFolder = Get-CapaUnitFolder -CapaSDK $oCMS -UnitName $Unit.Name -UnitType Computer
-        
-        # Code
-        if ($UnitLastExecuted -lt $Date) {
+        #endregion
+
+        #region Code
+        if ($null -ne $Script:InactiveLastRunTimeFolderStructure -and $UnitLastExecuted -lt $Date -and $LastRunTime -gt $Date) {
+            Write-MBLogLine -ScriptPart $ScriptPart -Text "The unit $($Unit.Name) has not been executed for $Script:LastRunDate days but the last run time is $LastRunTime"
+
+            if ($Status -ne $true) {
+                Write-MBLogLine -ScriptPart $ScriptPart -Text "Failed to add unit $($Unit.Name) to folder $Script:InactiveActiveFolderStructure" -ForegroundColor Red
+                $Script:ScriptFailed = 1
+            }
+        } elseif ($UnitLastExecuted -lt $Date) {
             Write-MBLogLine -ScriptPart $ScriptPart -Text "Unit to set inactive: $($Unit.Name) - LastRunTime: $LastRunTime - UnitLastExecuted: $UnitLastExecuted"
 
             [bool]$Status = Set-CapaUnitStatus -CapaSDK $oCMS -UnitName $Unit.Name -Status Inactive
@@ -75,13 +84,6 @@ function Set-UnitInactive {
                     $Script:ScriptFailed = 1
                 }
             }
-        } elseif ($null -ne $Script:InactiveLastRunTimeFolderStructure -and $UnitLastExecuted -lt $Date -and $LastRunTime -gt $Date) {
-            Write-MBLogLine -ScriptPart $ScriptPart -Text "The unit $($Unit.Name) has not been executed for $Script:LastRunDate days but the last run time is $LastRunTime"
-
-            if ($Status -ne $true) {
-                Write-MBLogLine -ScriptPart $ScriptPart -Text "Failed to add unit $($Unit.Name) to folder $Script:InactiveActiveFolderStructure" -ForegroundColor Red
-                $Script:ScriptFailed = 1
-            }
         } elseif ($null -ne $Script:InactiveActiveFolderStructure -and $UnitFolder -eq "$Script:InactiveFolderStructure\" -and $Unit.Status -eq 'Active') {
             Write-MBLogLine -ScriptPart $ScriptPart -Text "The unit $($Unit.Name) has become active again"
 
@@ -91,6 +93,7 @@ function Set-UnitInactive {
                 $Script:ScriptFailed = 1
             }
         }
+        #endregion
     }
 }
 
